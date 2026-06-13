@@ -85,14 +85,14 @@
 </div>
 
 <script>
-    // Ambil ID folder dari parameter URL (?id=3)
     const urlParams = new URLSearchParams(window.location.search);
     const FOLDER_ID = urlParams.get('id');
 
     const API_GET_CONTACTS = "https://api.jasapromosi.web.id/api_get_contacts.php?folder_id=" + FOLDER_ID;
     const API_CREATE_CONTACT = "https://api.jasapromosi.web.id/api_create_contact.php";
+    const API_DELETE_CONTACT = "https://api.jasapromosi.web.id/api_delete_contact.php"; // API BARU
 
-    // 1. AMBIL DATA DARI CPANEL
+    // 1. AMBIL DATA KONTAK
     async function loadContacts() {
         if(!FOLDER_ID) {
             alert("ID Folder tidak valid!");
@@ -121,7 +121,12 @@
                         <tr>
                             <td class="fw-semibold text-dark">${kontak.nama}</td>
                             <td><i class="bi bi-whatsapp text-success"></i> <a href="https://wa.me/${kontak.nomor_wa}" target="_blank" class="text-decoration-none text-dark fw-mono">${kontak.nomor_wa}</a></td>
-                            <td class="text-end"><span class="badge bg-light text-success border border-success-subtle"><i class="bi bi-check2-circle"></i> Ready</span></td>
+                            <td class="text-end">
+                                <span class="badge bg-light text-success border border-success-subtle me-2"><i class="bi bi-check2-circle"></i> Ready</span>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteContact(${kontak.id})">
+                                    <i class="bi text-danger bi-trash"></i>
+                                </button>
+                            </td>
                         </tr>
                     `;
                 });
@@ -131,7 +136,7 @@
         }
     }
 
-    // 2. SIMPAN NOMOR WA BARU
+    // 2. SIMPAN KONTAK BARU
     async function saveContact() {
         const inputNama = document.getElementById("input-nama-kontak");
         const inputWA = document.getElementById("input-nomor-wa");
@@ -157,21 +162,43 @@
             const result = await response.json();
 
             if(result.status === "success") {
-                alert("JOSS! Nomor baru berhasil dimasukkan.");
                 inputNama.value = "";
                 inputWA.value = "";
 
-                // Tutup modal popup
                 const modalEl = document.getElementById('modalTambahKontak');
                 const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
                 modalInstance.hide();
 
-                loadContacts(); // Refresh tabel nomor otomatis
+                loadContacts(); 
             } else {
                 alert("Gagal: " + result.message);
             }
         } catch (error) {
             alert("Gagal koneksi ke API Simpan Nomor cPanel!");
+        }
+    }
+
+    // 3. FUNGSI HAPUS KONTAK (BARU)
+    async function deleteContact(idKontak) {
+        if(!confirm("Yakin ingin menghapus nomor kontak ini, Mas Bro?")) return;
+
+        try {
+            const response = await fetch(API_DELETE_CONTACT, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: idKontak,
+                    folder_id: FOLDER_ID
+                })
+            });
+            const result = await response.json();
+            if(result.status === "success") {
+                loadContacts(); // Refresh tabel otomatis
+            } else {
+                alert("Gagal menghapus: " + result.message);
+            }
+        } catch (error) {
+            alert("Gagal terhubung ke API Hapus Kontak!");
         }
     }
 
