@@ -89,6 +89,7 @@
 </div>
 
 <script>
+    // PASTIKAN file PHP ini ditaruh langsung di folder utama subdomain (public_html/api atau root subdomain)
     const API_GET = "https://api.jasapromosi.web.id/api_get_folders.php";
     const API_CREATE = "https://api.jasapromosi.web.id/api_create_folder.php";
 
@@ -122,9 +123,12 @@
                         </tr>
                     `;
                 });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4">Database Eror: ${result.message}</td></tr>`;
             }
         } catch (error) {
-            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4">Gagal terhubung ke backend cPanel!</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4">Gagal terhubung ke backend cPanel! <br><small class="text-muted">Periksa jaringan atau pastikan file PHP & SSL subdomain aktif.</small></td></tr>`;
+            console.error("Eror Fetching:", error);
         }
     }
 
@@ -150,18 +154,18 @@
                 alert("MANTAP! Folder baru berhasil dibuat.");
                 inputNama.value = ""; // Kosongkan inputan
                 
-                // Tutup Modal Pop-up secara otomatis
+                // BERHASIL DIPERBAIKI: Menggunakan bootstrap.Modal (huruf m kecil) agar tidak macet
                 const modalEl = document.getElementById('modalTambahFolder');
-               const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
                 modalInstance.hide();
 
                 loadFolders(); // Refresh daftar tabel otomatis
             } else {
-                alert("Waduh: " + result.message);
+                alert("Waduh Gagal: " + result.message);
             }
         } catch (error) {
-            alert("Gagal mengirim data ke server cPanel!");
-            console.error(error);
+            alert("Gagal mengirim data ke server cPanel! Periksa log console browser.");
+            console.error("Eror Menambah Folder:", error);
         }
     }
 
