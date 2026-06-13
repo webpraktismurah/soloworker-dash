@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoloWorker SaaS - Detail Folder</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; font-family: system-ui, -apple-system, sans-serif; }
+        .card-custom { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .btn-gradient { background: linear-gradient(135deg, #25D366, #128C7E); color: white; border: none; }
+        .btn-gradient:hover { color: white; opacity: 0.9; }
+    </style>
+</head>
+<body>
+
+<div class="container py-4">
+    <div class="mb-3">
+        <a href="index.html" class="btn btn-sm btn-light border fw-semibold text-muted">
+            <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
+        </a>
+    </div>
+
+    <div class="card card-custom p-4 bg-white mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <span class="badge bg-success mb-1">Folder Aktif</span>
+                <h3 class="fw-bold text-dark mb-0" id="text-nama-folder">Memuat nama folder...</h3>
+            </div>
+            <button class="btn btn-gradient px-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalTambahKontak">
+                <i class="bi bi-person-plus"></i> Tambah Nomor
+            </button>
+        </div>
+    </div>
+
+    <div class="card card-custom p-3 bg-white">
+        <h6 class="fw-bold text-muted mb-3">Daftar Nomor WhatsApp Dalam Grup Ini</h6>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nama Kontak</th>
+                        <th>Nomor WhatsApp</th>
+                        <th class="text-end">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="target-list-kontak">
+                    <tr>
+                        <td colspan="3" class="text-center py-4 text-muted">
+                            <div class="spinner-border spinner-border-sm text-success me-2" role="status"></div>
+                            Sedang memuat data nomor...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalTambahKontak" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 12px;">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold text-success"><i class="bi bi-person-plus"></i> Tambah Kontak Baru</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+            <label class="form-label fw-semibold text-muted">Nama Pemilik Nomor</label>
+            <input type="text" id="input-nama-kontak" class="form-control" placeholder="Contoh: Emak Ani Pasuruan">
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-semibold text-muted">Nomor WhatsApp</label>
+            <input type="text" id="input-nomor-wa" class="form-control" placeholder="Contoh: 6281234567xxx">
+            <small class="text-muted" style="font-size: 11px;">Gunakan kode negara, contoh langsung awali dengan <b>62</b></small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success px-4" onclick="saveContact()">Simpan Nomor</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    // Ambil ID folder dari parameter URL (?id=3)
+    const urlParams = new URLSearchParams(window.location.search);
+    const FOLDER_ID = urlParams.get('id');
+
+    const API_GET_CONTACTS = "https://api.jasapromosi.web.id/api_get_contacts.php?folder_id=" + FOLDER_ID;
+    const API_CREATE_CONTACT = "https://api.jasapromosi.web.id/api_create_contact.php";
+
+    // 1. AMBIL DATA DARI CPANEL
+    async function loadContacts() {
+        if(!FOLDER_ID) {
+            alert("ID Folder tidak valid!");
+            window.location.href = "index.html";
+            return;
+        }
+
+        const tbody = document.getElementById("target-list-kontak");
+        const titleEl = document.getElementById("text-nama-folder");
+
+        try {
+            const response = await fetch(API_GET_CONTACTS);
+            const result = await response.json();
+
+            if(result.status === "success") {
+                titleEl.innerText = result.nama_folder;
+                tbody.innerHTML = "";
+
+                if(result.data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">Belum ada nomor WA di folder ini. Silakan tambah data!</td></tr>`;
+                    return;
+                }
+
+                result.data.forEach(kontak => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="fw-semibold text-dark">${kontak.nama}</td>
+                            <td><i class="bi bi-whatsapp text-success"></i> <a href="https://wa.me/${kontak.nomor_wa}" target="_blank" class="text-decoration-none text-dark fw-mono">${kontak.nomor_wa}</a></td>
+                            <td class="text-end"><span class="badge bg-light text-success border border-success-subtle"><i class="bi bi-check2-circle"></i> Ready</span></td>
+                        </tr>
+                    `;
+                });
+            }
+        } catch (error) {
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4">Gagal mengambil data nomor WA dari cPanel!</td></tr>`;
+        }
+    }
+
+    // 2. SIMPAN NOMOR WA BARU
+    async function saveContact() {
+        const inputNama = document.getElementById("input-nama-kontak");
+        const inputWA = document.getElementById("input-nomor-wa");
+
+        const namaVal = inputNama.value.trim();
+        const waVal = inputWA.value.trim();
+
+        if(!waVal) {
+            alert("Nomor WhatsApp wajib diisi mas bro!");
+            return;
+        }
+
+        try {
+            const response = await fetch(API_CREATE_CONTACT, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    folder_id: FOLDER_ID,
+                    nama: namaVal ? namaVal : 'No Name',
+                    nomor_wa: waVal
+                })
+            });
+            const result = await response.json();
+
+            if(result.status === "success") {
+                alert("JOSS! Nomor baru berhasil dimasukkan.");
+                inputNama.value = "";
+                inputWA.value = "";
+
+                // Tutup modal popup
+                const modalEl = document.getElementById('modalTambahKontak');
+                const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modalInstance.hide();
+
+                loadContacts(); // Refresh tabel nomor otomatis
+            } else {
+                alert("Gagal: " + result.message);
+            }
+        } catch (error) {
+            alert("Gagal koneksi ke API Simpan Nomor cPanel!");
+        }
+    }
+
+    window.onload = loadContacts;
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
