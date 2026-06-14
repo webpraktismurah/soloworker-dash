@@ -59,12 +59,12 @@
 </div>
 
 <script>
-    // URL API Backend VPS
-    const BASE_URL = "/api";
+    // Pastikan BASE_URL mengarah ke domain VPS Mas Bro
+    const BASE_URL = ""; 
     const API_GET_FOLDERS    = BASE_URL + "/api_get_folders";
-    const API_SEND_BROADCAST = BASE_URL + "/send-message"; // Mengarah ke endpoint bot di server.js
+    const API_SEND_BROADCAST = BASE_URL + "/send-message";
 
-    // 1. ISI PILIHAN FOLDER
+    // 1. ISI PILIHAN FOLDER DENGAN JUMLAH KONTAK
     async function initBroadcastPage() {
         const selectEl = document.getElementById("select-folder");
         try {
@@ -73,7 +73,8 @@
             if (result.status === "success") {
                 selectEl.innerHTML = '<option value="">-- Pilih Folder --</option>';
                 result.data.forEach(folder => {
-                    selectEl.innerHTML += `<option value="${folder.id}">${folder.nama_folder}</option>`;
+                    // Menampilkan jumlah kontak di samping nama folder
+                    selectEl.innerHTML += `<option value="${folder.id}">${folder.nama_folder} (${folder.total_kontak} kontak)</option>`;
                 });
             }
         } catch (error) {
@@ -88,22 +89,20 @@
         const logBox = document.getElementById("log-status");
 
         if(!folderId || !pesan) return alert("Pilih folder dan isi pesan!");
-        if(!confirm("Yakin ingin kirim?")) return;
+        if(!confirm("Yakin ingin kirim ke folder ini?")) return;
 
-        logBox.innerHTML = "Mengirim...";
+        logBox.innerHTML = "Memproses broadcast...";
         
         try {
-            // Karena kita belum punya database kontak per folder di VPS, 
-            // nanti kita perlu tambahkan fungsi ambil kontak di server.js
             const response = await fetch(API_SEND_BROADCAST, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ nomor_wa: "628xxxxxxxx", pesan: pesan }) // Contoh statis
+                body: JSON.stringify({ folder_id: folderId, pesan: pesan }) // Mengirim folder_id ke server
             });
             const result = await response.json();
-            logBox.innerHTML = result.message;
+            logBox.innerHTML = result.status === "success" ? result.message : "Error: " + result.message;
         } catch (e) {
-            logBox.innerHTML = "Gagal kirim pesan.";
+            logBox.innerHTML = "Gagal menghubungi server.";
         }
     }
 
