@@ -26,83 +26,71 @@
         <div class="col-md-7">
             <div class="card card-custom p-4 bg-white mb-4">
                 <h4 class="fw-bold text-success mb-3"><i class="bi bi-send-check"></i> Kirim WhatsApp Massal</h4>
-                <p class="text-muted" style="font-size: 14px;">Pilih folder target dan luncurkan pesan broadcast Anda.</p>
-                <hr>
-
                 <div class="mb-3">
                     <label class="form-label fw-bold text-muted">1. Pilih Folder Target</label>
-                    <select id="select-folder" class="form-select form-select-lg" style="border-radius: 8px;">
+                    <select id="select-folder" class="form-select form-select-lg">
                         <option value="">-- Memuat data... --</option>
                     </select>
                 </div>
-
                 <div class="mb-3">
                     <label class="form-label fw-bold text-muted">2. Isi Teks Pesan</label>
-                    <textarea id="input-pesan" class="form-control" rows="6" placeholder="Halo, ada promo menarik..." style="border-radius: 8px;"></textarea>
+                    <textarea id="input-pesan" class="form-control" rows="6" placeholder="Halo..."></textarea>
                 </div>
-
-                <button type="button" class="btn btn-gradient btn-lg w-100 fw-bold shadow-sm mt-2" onclick="startBroadcast()" id="btn-kirim-blast">
+                <button type="button" class="btn btn-gradient btn-lg w-100 fw-bold" onclick="startBroadcast()">
                     <i class="bi bi-rocket-takeoff"></i> LUNCURKAN BROADCAST NOW!
                 </button>
             </div>
         </div>
-
         <div class="col-md-5">
             <div class="card card-custom p-4 bg-white">
-                <h6 class="fw-bold text-muted mt-4 mb-2">Status Hasil Pengiriman:</h6>
-                <div id="log-status" class="p-3 bg-light border text-secondary rounded-3" style="min-height: 120px; font-size: 13px; font-family: monospace;">
-                    Belum ada aktivitas...
-                </div>
+                <h6 class="fw-bold text-muted">Status:</h6>
+                <div id="log-status" class="p-3 bg-light border rounded-3" style="font-family: monospace; font-size: 13px;">Belum ada aktivitas...</div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Pastikan BASE_URL mengarah ke domain VPS Mas Bro
-    const BASE_URL = "https://aplikasi.jasapromosi.web.id"; 
-const API_GET_FOLDERS = "https://aplikasi.jasapromosi.web.id:3000/api_get_folders";
-    const API_SEND_BROADCAST = "https://aplikasi.jasapromosi.web.id:3000/send-message";
-    
-    // 1. ISI PILIHAN FOLDER DENGAN JUMLAH KONTAK
-  async function initBroadcastPage() {
-    const selectEl = document.getElementById("select-folder");
-    try {
-        const response = await fetch(API_GET_FOLDERS);
+    // Gunakan URL lengkap
+    const API_URL = "https://aplikasi.jasapromosi.web.id:3000";
+
+    async function initBroadcastPage() {
+        const selectEl = document.getElementById("select-folder");
+        try {
+            const response = await fetch(`${API_URL}/api_get_folders`);
             const result = await response.json();
+            
             if (result.status === "success") {
                 selectEl.innerHTML = '<option value="">-- Pilih Folder --</option>';
                 result.data.forEach(folder => {
-                    // Menampilkan jumlah kontak di samping nama folder
                     selectEl.innerHTML += `<option value="${folder.id}">${folder.nama_folder} (${folder.total_kontak} kontak)</option>`;
                 });
             }
         } catch (error) {
-            selectEl.innerHTML = '<option value="">Gagal hubungi VPS</option>';
+            console.error(error);
+            selectEl.innerHTML = '<option value="">Server tidak merespon (Cek Port 3000)</option>';
         }
     }
 
-    // 2. PROSES BROADCAST
     async function startBroadcast() {
         const folderId = document.getElementById("select-folder").value;
         const pesan = document.getElementById("input-pesan").value;
         const logBox = document.getElementById("log-status");
 
         if(!folderId || !pesan) return alert("Pilih folder dan isi pesan!");
-        if(!confirm("Yakin ingin kirim ke folder ini?")) return;
-
-        logBox.innerHTML = "Memproses broadcast...";
+        
+        logBox.innerHTML = "Memproses...";
         
         try {
-            const response = await fetch(API_SEND_BROADCAST, {
+            const response = await fetch(`${API_URL}/send-message`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ folder_id: folderId, pesan: pesan }) // Mengirim folder_id ke server
+                body: JSON.stringify({ folder_id: folderId, pesan: pesan })
             });
             const result = await response.json();
-            logBox.innerHTML = result.status === "success" ? result.message : "Error: " + result.message;
+            logBox.innerHTML = result.message;
         } catch (e) {
-            logBox.innerHTML = "Gagal menghubungi server.";
+            logBox.innerHTML = "Gagal kirim. Pastikan port 3000 terbuka di firewall VPS.";
         }
     }
 
