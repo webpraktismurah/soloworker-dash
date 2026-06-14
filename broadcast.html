@@ -61,9 +61,9 @@
 <script>
     // Pastikan BASE_URL mengarah ke domain VPS Mas Bro
     const BASE_URL = "https://aplikasi.jasapromosi.web.id"; 
-const API_GET_FOLDERS = "https://aplikasi.jasapromosi.web.id/api_get_folders";
-const API_SEND_BROADCAST = "https://aplikasi.jasapromosi.web.id/send-message";
-
+const API_GET_FOLDERS = "https://aplikasi.jasapromosi.web.id:3000/api_get_folders";
+    const API_SEND_BROADCAST = "https://aplikasi.jasapromosi.web.id:3000/send-message";
+    
     // 1. ISI PILIHAN FOLDER DENGAN JUMLAH KONTAK
   async function initBroadcastPage() {
     const selectEl = document.getElementById("select-folder");
