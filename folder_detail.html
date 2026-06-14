@@ -2,8 +2,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const FOLDER_ID = urlParams.get('id');
 
-    // Menggunakan base URL '/api' sesuai konfigurasi vercel.json
-    const BASE_URL          = "/api";
+    const BASE_URL = "/api";
     const API_GET_CONTACTS = BASE_URL + "/api_get_contacts?folder_id=" + FOLDER_ID;
     const API_CREATE_CONTACT = BASE_URL + "/api_create_contact";
     const API_DELETE_CONTACT = BASE_URL + "/api_delete_contact";
@@ -20,8 +19,7 @@
             const result = await response.json();
 
             if(result.status === "success") {
-                // Perbaikan: Ambil nama folder dari data atau beri fallback
-                titleEl.innerText = result.nama_folder || "Folder Kontak";
+                titleEl.innerText = "Folder ID: " + FOLDER_ID;
                 tbody.innerHTML = "";
 
                 if(!result.data || result.data.length === 0) {
@@ -43,12 +41,46 @@
                     `;
                 });
             } else {
-                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-danger">Data tidak ditemukan.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-danger">Gagal memuat data.</td></tr>`;
             }
         } catch (error) {
-            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4">Gagal terhubung ke server (Proxy/VPS)!</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4">Gagal terhubung ke server!</td></tr>`;
         }
     }
-    
-    // ... (fungsi saveContact dan deleteContact tetap sama)
+
+    // 2. SIMPAN KONTAK
+    async function saveContact() {
+        const nama = document.getElementById("input-nama-kontak").value;
+        const nomor = document.getElementById("input-nomor-wa").value;
+
+        try {
+            const response = await fetch(API_CREATE_CONTACT, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ folder_id: FOLDER_ID, nama: nama, nomor_wa: nomor })
+            });
+            const res = await response.json();
+            if(res.status === "success") {
+                bootstrap.Modal.getInstance(document.getElementById('modalTambahKontak')).hide();
+                loadContacts();
+            } else {
+                alert("Gagal menyimpan kontak");
+            }
+        } catch(e) { alert("Error koneksi"); }
+    }
+
+    // 3. HAPUS KONTAK
+    async function deleteContact(id) {
+        if(!confirm("Yakin hapus kontak ini?")) return;
+        try {
+            const response = await fetch(API_DELETE_CONTACT, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: id })
+            });
+            loadContacts();
+        } catch(e) { alert("Gagal Hapus"); }
+    }
+
+    window.onload = loadContacts;
 </script>
