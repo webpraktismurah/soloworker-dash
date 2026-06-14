@@ -88,9 +88,10 @@
     const urlParams = new URLSearchParams(window.location.search);
     const FOLDER_ID = urlParams.get('id');
 
-    const API_GET_CONTACTS = "https://api.jasapromosi.web.id/api_get_contacts.php?folder_id=" + FOLDER_ID;
-    const API_CREATE_CONTACT = "https://api.jasapromosi.web.id/api_create_contact.php";
-    const API_DELETE_CONTACT = "https://api.jasapromosi.web.id/api_delete_contact.php"; // API BARU
+const BASE_URL          = "http://109.111.53.203:3000";
+    const API_GET_FOLDERS   = BASE_URL + "/api_get_folders";
+    const API_CREATE_FOLDER = BASE_URL + "/api_create_folder"; // Nanti kita buat di server.js
+    const API_DELETE_FOLDER = BASE_URL + "/api_delete_folder"; // Nanti kita buat di server.js
 
     // 1. AMBIL DATA KONTAK
     async function loadContacts() {
