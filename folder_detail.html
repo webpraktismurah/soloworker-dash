@@ -42,7 +42,7 @@
                     <tr>
                         <th>Nama Kontak</th>
                         <th>Nomor WhatsApp</th>
-                        <th class="text-end">Status</th>
+                        <th class="text-end">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="target-list-kontak">
@@ -73,7 +73,6 @@
         <div class="mb-3">
             <label class="form-label fw-semibold text-muted">Nomor WhatsApp</label>
             <input type="text" id="input-nomor-wa" class="form-control" placeholder="Contoh: 6281234567xxx">
-            <small class="text-muted" style="font-size: 11px;">Gunakan kode negara, contoh langsung awali dengan <b>62</b></small>
         </div>
       </div>
       <div class="modal-footer">
@@ -88,15 +87,15 @@
     const urlParams = new URLSearchParams(window.location.search);
     const FOLDER_ID = urlParams.get('id');
 
-const BASE_URL          = "http://109.111.53.203:3000";
-    const API_GET_FOLDERS   = BASE_URL + "/api_get_folders";
-    const API_CREATE_FOLDER = BASE_URL + "/api_create_folder"; // Nanti kita buat di server.js
-    const API_DELETE_FOLDER = BASE_URL + "/api_delete_folder"; // Nanti kita buat di server.js
+    // Konfigurasi API ke VPS
+    const BASE_URL            = "http://109.111.53.203:3000";
+    const API_GET_CONTACTS    = BASE_URL + "/api_get_contacts?folder_id=" + FOLDER_ID;
+    const API_CREATE_CONTACT  = BASE_URL + "/api_create_contact";
+    const API_DELETE_CONTACT  = BASE_URL + "/api_delete_contact";
 
     // 1. AMBIL DATA KONTAK
     async function loadContacts() {
         if(!FOLDER_ID) {
-            alert("ID Folder tidak valid!");
             window.location.href = "index.html";
             return;
         }
@@ -109,11 +108,11 @@ const BASE_URL          = "http://109.111.53.203:3000";
             const result = await response.json();
 
             if(result.status === "success") {
-                titleEl.innerText = result.nama_folder;
+                titleEl.innerText = result.nama_folder || "Folder Tanpa Nama";
                 tbody.innerHTML = "";
 
-                if(result.data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">Belum ada nomor WA di folder ini. Silakan tambah data!</td></tr>`;
+                if(!result.data || result.data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">Belum ada nomor WA di folder ini.</td></tr>`;
                     return;
                 }
 
@@ -121,11 +120,10 @@ const BASE_URL          = "http://109.111.53.203:3000";
                     tbody.innerHTML += `
                         <tr>
                             <td class="fw-semibold text-dark">${kontak.nama}</td>
-                            <td><i class="bi bi-whatsapp text-success"></i> <a href="https://wa.me/${kontak.nomor_wa}" target="_blank" class="text-decoration-none text-dark fw-mono">${kontak.nomor_wa}</a></td>
+                            <td><a href="https://wa.me/${kontak.nomor_wa}" target="_blank" class="text-decoration-none text-dark">${kontak.nomor_wa}</a></td>
                             <td class="text-end">
-                                <span class="badge bg-light text-success border border-success-subtle me-2"><i class="bi bi-check2-circle"></i> Ready</span>
                                 <button class="btn btn-sm btn-outline-danger" onclick="deleteContact(${kontak.id})">
-                                    <i class="bi text-danger bi-trash"></i>
+                                    <i class="bi bi-trash"></i>
                                 </button>
                             </td>
                         </tr>
@@ -133,74 +131,39 @@ const BASE_URL          = "http://109.111.53.203:3000";
                 });
             }
         } catch (error) {
-            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4">Gagal mengambil data nomor WA dari cPanel!</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4">Gagal terhubung ke server VPS!</td></tr>`;
         }
     }
 
-    // 2. SIMPAN KONTAK BARU
+    // 2. SIMPAN KONTAK (Panggil API POST di server.js nanti)
     async function saveContact() {
-        const inputNama = document.getElementById("input-nama-kontak");
-        const inputWA = document.getElementById("input-nomor-wa");
-
-        const namaVal = inputNama.value.trim();
-        const waVal = inputWA.value.trim();
-
-        if(!waVal) {
-            alert("Nomor WhatsApp wajib diisi mas bro!");
-            return;
-        }
+        const nama = document.getElementById("input-nama-kontak").value;
+        const nomor = document.getElementById("input-nomor-wa").value;
 
         try {
             const response = await fetch(API_CREATE_CONTACT, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    folder_id: FOLDER_ID,
-                    nama: namaVal ? namaVal : 'No Name',
-                    nomor_wa: waVal
-                })
+                body: JSON.stringify({ folder_id: FOLDER_ID, nama, nomor_wa: nomor })
             });
-            const result = await response.json();
-
-            if(result.status === "success") {
-                inputNama.value = "";
-                inputWA.value = "";
-
-                const modalEl = document.getElementById('modalTambahKontak');
-                const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
-                modalInstance.hide();
-
-                loadContacts(); 
-            } else {
-                alert("Gagal: " + result.message);
+            if((await response.json()).status === "success") {
+                bootstrap.Modal.getInstance(document.getElementById('modalTambahKontak')).hide();
+                loadContacts();
             }
-        } catch (error) {
-            alert("Gagal koneksi ke API Simpan Nomor cPanel!");
-        }
+        } catch(e) { alert("Gagal Simpan"); }
     }
 
-    // 3. FUNGSI HAPUS KONTAK (BARU)
-    async function deleteContact(idKontak) {
-        if(!confirm("Yakin ingin menghapus nomor kontak ini, Mas Bro?")) return;
-
+    // 3. HAPUS KONTAK
+    async function deleteContact(id) {
+        if(!confirm("Yakin hapus kontak ini?")) return;
         try {
-            const response = await fetch(API_DELETE_CONTACT, {
+            await fetch(API_DELETE_CONTACT, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    id: idKontak,
-                    folder_id: FOLDER_ID
-                })
+                body: JSON.stringify({ id: id })
             });
-            const result = await response.json();
-            if(result.status === "success") {
-                loadContacts(); // Refresh tabel otomatis
-            } else {
-                alert("Gagal menghapus: " + result.message);
-            }
-        } catch (error) {
-            alert("Gagal terhubung ke API Hapus Kontak!");
-        }
+            loadContacts();
+        } catch(e) { alert("Gagal Hapus"); }
     }
 
     window.onload = loadContacts;
