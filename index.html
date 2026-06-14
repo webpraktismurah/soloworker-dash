@@ -92,9 +92,10 @@
 
 <script>
     // URL API Backend cPanel Mas Bro
-    const API_GET_FOLDERS    = "https://api.jasapromosi.web.id/api_get_folders.php";
-    const API_CREATE_FOLDER  = "https://api.jasapromosi.web.id/api_create_folder.php";
-    const API_DELETE_FOLDER  = "https://api.jasapromosi.web.id/api_delete_folder.php";
+  const BASE_URL          = "http://109.111.53.203:3000";
+    const API_GET_FOLDERS   = BASE_URL + "/api_get_folders";
+    const API_CREATE_FOLDER = BASE_URL + "/api_create_folder"; // Nanti kita buat di server.js
+    const API_DELETE_FOLDER = BASE_URL + "/api_delete_folder"; // Nanti kita buat di server.js
 
     // 1. FUNGSI MENAMPILKAN SEMUA FOLDER DARI DATABASE
     async function loadFolders() {
